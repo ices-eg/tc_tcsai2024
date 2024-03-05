@@ -62,12 +62,26 @@ mu <- sum(haddock$rec) / length(haddock$rec)
 mu_hat <- seq(8000, 10500, by = 250)
 
 # create a matrix of residuals, like in the spreadsheet
-recruits <- matrix(haddock$rec, nrow = length(haddock$rec), ncol = length(mu_hat), byrow = FALSE)
-mu_hats <- matrix(mu_hat, nrow = length(haddock$rec), ncol = length(mu_hat), byrow = TRUE)
+recruits <-
+  matrix(
+    haddock$rec,
+    nrow = length(haddock$rec), ncol = length(mu_hat),
+    byrow = FALSE
+  )
+
+mu_hats <-
+  matrix(
+    mu_hat,
+    nrow = length(haddock$rec), ncol = length(mu_hat),
+    byrow = TRUE
+  )
 
 residuals <- recruits - mu_hats
 
 SSQ <- colSums(residuals^2)
+
+# more code efficient
+SSQ2 <- colSums(outer(haddock$rec, mu_hat, "-")^2)
 
 # plot the sums of squares line
 plot(mu_hat, SSQ, col = "red", lwd = 2, type = "l")
