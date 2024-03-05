@@ -10,73 +10,34 @@ library(ggplot2)
 library(htmltools)
 library(RTMB)
 
-# ==============================================================================
-# Load data
-# ==============================================================================
-
 # load data from comma-separated file to data.frame
 haddock <- read.csv(file = "02_Model_fitting/northern_shelf_haddock_SR.csv", header = TRUE)
-names(haddock) <- c("yc", "ssb", "rec")
-#haddock$rec <- haddock$rec / 1000
-#haddock$ssb <- haddock$ssb / 100
+cod <- read.csv(file = "02_Model_fitting/north_sea_cod_SR.csv", header = TRUE)
+herring <- read.csv(file = "02_Model_fitting/north_sea_herring_SR.csv", header = TRUE)
+names(herring) <- names(cod) <- names(haddock) <- c("yc", "S", "R")
 
-# useful functions
-bevholt <- function(a, b, S) {
-  a * S / (b + S)
-}
-
+# define models
 ricker <- function(a, b, S) {
-  a * S * exp(-b * S)
+  log(a) + log(S) - b * S
 }
 
-get_ssq <- function(loga, logb, srmodel) {
-  nll <- function(loga, logb, logSigma) {
-    a <- exp(loga)
-    b <- exp(logb)
-
-    -sum(dnorm(log(haddock$rec), log(srmodel(a, b, haddock$ssb)), exp(logSigma), TRUE))
-  }
-
-  ssq_func <- function(params) {
-    loga <- params$loga
-    logb <- params$logb
-    logSigma <- params$logSigma
-
-    nll(loga, logb, logSigma)
-  }
-
-  parameters <- list(loga = loga, logb = logb, logSigma = 0)
-  obj <- MakeADFun(ssq_func, parameters)
-
-  obj$hessian <- TRUE
-  opt <- do.call("optim", obj)
-  rep <- sdreport(obj)
-  est <- summary(rep)
-
-  # find a good range of loga and logb
-  sda <- est["loga", "Std. Error"]
-  sdb <- est["logb", "Std. Error"]
-
-  if (!is.finite(sda)) sda <- 0.1
-  if (!is.finite(sdb)) sdb <- 50
-  logas <- seq(-1, 1, by = 0.01) * 2 * sda + est["loga", "Estimate"]
-  logbs <- seq(-1, 1, by = 0.01) * 2 * sdb + est["logb", "Estimate"]
-
-  # fill out ssq
-  ssqs <- t(outer(logas, logbs, Vectorize(nll), logSigma = est["logSigma", "Estimate"]))
-  ssqs[ssqs > min(ssqs) + 5] <- NA
-
-  list(ssqs = ssqs, logas = logas, logbs = logbs, est = est)
+bevholt <- function(a, b, S) {
+  log(a) + log(S) - log(b + S)
 }
 
-model <- bevholt
-ssq <- get_ssq(0, 10, model)
-ssq$est
+bevholt2 <- function(a, b, S) {
+  log(a) + log(S) - log(1 + b * S)
+}
 
 # shiny user interface
 ui <- fluidPage(
-  h1("Stock Recruitment fit to Northern Shelf Haddock"),
-  textOutput("ab"),
+  h1("Stock Recruitment fits for ICES TCISA2024"),
+  fluidRow(
+    column(3, selectInput("data", "Select dataset", c("haddock", "cod", "herring"))),
+    column(3, selectInput("model", "Select model", c("ricker", "bevholt", "bevholt2"))),
+    column(3, textOutput("equation")),
+    column(3, textOutput("ab"))
+  ),
   fluidRow(
     column(6, plotOutput("sr_plot")),
     column(6, plotOutput("ssq", click = "plot_click"))
@@ -85,30 +46,121 @@ ui <- fluidPage(
 
 # the app logic
 server <- function(input, output, session) {
+  # assign model
+  model <- reactive({
+    switch(input$model,
+      ricker = ricker,
+      bevholt = bevholt,
+      bevholt2 = bevholt2
+    )
+  })
 
+  output$equation <- renderText({
+    as.character(body(model())[2])
+  })
 
+  # assign dataset
+  data <- reactive({
+    switch(input$data,
+      haddock = haddock,
+      cod = cod,
+      herring = herring
+    )
+  })
 
+  # calculate nll surface
+  ssq <- reactive({
+    data_ <- data()
+    model_ <- model()
 
+    nll <- function(params) {
+      loga <- params$loga
+      logb <- params$logb
+      logSigma <- params$logSigma
+
+      log_pred <- model_(exp(loga), exp(logb), data_$S)
+
+      -sum(
+        dnorm(
+          x = log(data_$R),
+          mean = log_pred,
+          sd = exp(logSigma),
+          log = TRUE
+        )
+      )
+    }
+
+    ssq <- function(loga, logb) {
+      sum((log(data_$R) - model_(exp(loga), exp(logb), data_$S))^2)
+    }
+
+    # get good starting values
+    parameters <- list(loga = log(mean(data_$R)), logb = 0, logSigma = log(sd(log(data_$R))))
+    obj <- MakeADFun(nll, parameters, silent = TRUE)
+
+    opt <- nlminb(obj$par, obj$fn, obj$gr)
+    rep <- sdreport(obj)
+    est <- summary(rep)
+    print(est)
+
+    # find a good range of loga and logb
+    sda <- est["loga", "Std. Error"]
+    sdb <- est["logb", "Std. Error"]
+
+    # hacky saftey check for plotting
+    if (!is.finite(sda) || sda > abs(est["loga", "Estimate"])) sda <- est["loga", "Estimate"]
+    if (!is.finite(sdb) || sdb > abs(est["logb", "Estimate"])) sdb <- abs(est["logb", "Estimate"])
+
+    logas <- seq(-1, 1, length = 200) * 3 * sda + est["loga", "Estimate"]
+    logbs <- seq(-1, 1, length = 200) * 3 * sdb + est["logb", "Estimate"]
+
+    # fill out ssq
+    ssqs <- t(outer(logas, logbs, Vectorize(ssq)))
+    ssqs[ssqs >= (min(ssqs) + 20)] <- NA
+
+    # trim based on NAs
+    atrim <- apply(ssqs, 2, function(x) any(!is.na(x)))
+    btrim <- apply(ssqs, 1, function(x) any(!is.na(x)))
+
+    logas <- logas[atrim]
+    logbs <- logbs[btrim]
+    ssqs <- ssqs[btrim, atrim]
+
+    list(ssqs = ssqs, logas = logas, logbs = logbs, est = est)
+  })
+
+  best_fit <- reactive({
+    # S > 0
+    S <- seq(1e-9, max(data()$S), length = 100)
+    a <- exp(ssq()$est["loga", "Estimate"])
+    b <- exp(ssq()$est["logb", "Estimate"])
+    data.frame(S = S, R = exp(model()(a, b, S)))
+  })
 
   # process inputs
   fit <- reactive({
-    S <- seq(0, max(haddock$ssb))
+    # S > 0
+    S <- seq(1e-9, max(data()$S), length = 100)
     a <- exp(input$plot_click$y)
     b <- exp(input$plot_click$x)
-    data.frame(ssb = S, rec = model(a, b, S))
+    out <- data.frame(S = S, R = exp(model()(a, b, S)))
+    out[out$R < max(data()$R), ]
   })
 
   # make a plot
   output$sr_plot <- renderPlot({
-    p <- ggplot(haddock, aes(ssb, rec)) +
+    data_ <- data()
+    p <- ggplot(data_, aes(S, R)) +
       geom_point() +
-      scale_x_continuous("Spawners (kt)", limits = c(0, max(haddock$ssb)), expand = expansion(mult = c(0, .04))) +
-      scale_y_continuous("Recruits (millions age 0)", limits = c(0, max(haddock$rec)), expand = expansion(mult = c(0, .04))) +
+      geom_line(data = best_fit(), col = "blue") +
+      scale_x_continuous("Spawners (kt)", limits = c(0, max(data_$S)), expand = expansion(mult = c(0, .04))) +
+      scale_y_continuous("Recruits (millions age 0)", limits = c(0, max(data_$R)), expand = expansion(mult = c(0, .04))) +
       ggtitle("stock and recruitment") +
       theme_minimal()
 
-    if (!is.null(input$plot_click)) {
-      p + geom_line(data = fit(), col = "red", lwd = 1.5)
+    if (!is.null(input$plot_click) && nrow(fit()) > 4) {
+      p +
+        geom_line(data = fit(), col = "red", lwd = 1.5)
     } else {
       p
     }
@@ -116,11 +168,11 @@ server <- function(input, output, session) {
 
   output$ssq <- renderPlot({
     image(
-      ssq$logbs, ssq$logas, ssq$ssqs,
+      ssq()$logbs, ssq()$logas, ssq()$ssqs,
       xlab = "log b", ylab = "log a", main = "SSQ surface",
       col = c(heat.colors(20, rev = TRUE))
     )
-    points(ssq$est["logb", "Estimate"], ssq$est["loga", "Estimate"], pch = 16, col = "red")
+    points(ssq()$est["logb", "Estimate"], ssq()$est["loga", "Estimate"], pch = 16, col = "blue")
   })
 
   output$ab <- renderText({
