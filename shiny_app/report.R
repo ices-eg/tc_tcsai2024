@@ -18,5 +18,7 @@ cp("utilities_models.R", "report")
 cp("shiny_ui.R", "report/ui.R")
 cp("shiny_server.R", "report/server.R")
 cp("shiny_02_model_fitting.R", "report/02_model_fitting.R")
+cp("shiny_03_biological_production.R", "report/03_biological_production.R")
+
 
 msg("Created shiny app. To run, use: \n\n\tlibrary(shiny)\n\trunApp('report')\n\n")
