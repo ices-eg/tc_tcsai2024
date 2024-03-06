@@ -22,7 +22,8 @@ mod_03_biological_production_ui <- function(id) {
 
       # Show a plot of the generated distribution
       mainPanel(
-        plotOutput(outputId = ns("LinePlot"))
+        plotOutput(outputId = ns("LinePlot")),
+        plotOutput(outputId = ns("srPlot"))
       )
     )
   )
@@ -33,7 +34,7 @@ mod_03_biological_production_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    output$LinePlot <- renderPlot({
+    pop <- reactive({
       ageAtF <- 3
       Tmax <- 25
       M <- rep(input$Mage, input$Amax)
@@ -42,11 +43,15 @@ mod_03_biological_production_server <- function(id) {
 
       w <- 10 * (1 - exp(-0.5 * ((1:input$Amax) + 0.1)))^3
 
-      pop <- AgeModel(input$Ninit, M, Fmort, mat, w, input$Amax, Tmax, input$alpha, input$beta, v = input$v)
+      AgeModel(input$Ninit, M, Fmort, mat, w, input$Amax, Tmax, input$alpha, input$beta, v = input$v)
+    })
+
+    output$LinePlot <- renderPlot({
+      pop_ <- pop()
 
       df <- rbind(
-        data.frame(year = 1:length(pop$SSB), val = pop$SSB, what = "SSB"),
-        data.frame(year = 1:length(pop$SSB), val = pop$Rec, what = "Recruitment")
+        data.frame(year = 1:length(pop_$SSB), val = pop_$SSB, what = "SSB"),
+        data.frame(year = 1:length(pop_$SSB), val = pop_$Rec, what = "Recruitment")
       )
 
       ggplot(data = df, aes(year, val)) +
@@ -54,6 +59,22 @@ mod_03_biological_production_server <- function(id) {
         labs(x = "Year") +
         facet_wrap(~what, scales = "free") +
         expand_limits(y = 0)
+    })
+
+    output$srPlot <- renderPlot({
+      pop_ <- pop()
+
+      df <- data.frame(R = pop_$Rec, S = pop_$SSB)
+      sr <- data.frame(S = seq(0.1, max(pop_$S), length = 100))
+      sr$R <- input$alpha * sr$S / (input$beta + sr$S)
+
+      ggplot(data = df, aes(S, R)) +
+        geom_point() +
+        geom_line(data = sr, col = "blue") +
+        scale_x_continuous("Spawners", limits = c(0, max(pop_$S)), expand = expansion(mult = c(0, .04))) +
+        scale_y_continuous("Recruits", limits = c(0, max(pop_$R)), expand = expansion(mult = c(0, .04))) +
+        ggtitle("stock and recruitment") +
+        theme_minimal()
     })
   })
 }
