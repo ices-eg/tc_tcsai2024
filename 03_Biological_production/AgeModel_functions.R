@@ -78,6 +78,6 @@ beta <- 1000
 pop <- AgeModel(Ninit, M, Fmort, mat, w, Amax, Tmax, alpha, beta, v=1000)
 
 RecPlot(
-  AgeModel(Ninit, M, Fmort, mat, w, Amax, Tmax, alpha, beta, v = 1000),
+  pop,
   Slim = c(0, 20000), Rlim = c(0, 2000)
 )
