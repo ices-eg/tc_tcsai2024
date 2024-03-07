@@ -145,7 +145,7 @@ fit$refpts
 ################################################################################
 ## Georges Bank winter flounder
 
-flounder <- read.table("flounder.dat", header=TRUE)
+flounder <- read.table("04_Biomass_dynamics/flounder.dat", header = TRUE)
 
 K.init <- 8 * mean(flounder$Catch)
 B.init <- 0.5 * K.init
@@ -155,25 +155,21 @@ init <- c(logr=log(0.5), logK=log(K.init),
 
 Schaefer(par=init, flounder)
 optim(init, Schaefer, data=flounder)
-optim(init, Schaefer, data=flounder, method="Nelder-Mead",
+
+opt <- optim(init, Schaefer, data=flounder, method="Nelder-Mead",
       control=list(maxit=1e5, reltol=1e-10))
+
+plot_shaefer(Schaefer(opt$par, flounder, verbose = TRUE), flounder, main = "Albacore: Fit to data")
+
+
 nlminb(init, Schaefer, data=flounder, control=list(eval.max=1e4, iter.max=1e4))
+
 est <- nlminb(init, Schaefer, data=flounder,
               control=list(eval.max=1e4, iter.max=1e4))$par
+
 fit <- Schaefer(est, flounder, verbose=TRUE)
 
-par(mfrow=c(2,2))
-
-plot(flounder$Year, fit$Ifit, ylim=c(0,8), yaxs="i", lwd=4, col="gray",
-     type="l", xlab="Year", ylab="Biomass index", main="Flounder: Fit to data")
-points(Index~Year, flounder)
-
-plot(flounder$Year, fit$B, type="l", ylim=c(0,15), yaxs="i", lwd=2,
-     xlab="Year", ylab="Biomass and catch", main="Flounder: Biomass and catch")
-points(Catch~Year, flounder, type="h", lwd=6)
-
-plot(flounder$Year, fit$HR, ylim=c(0,0.6), yaxs="i", type="l",
-     lwd=2, xlab="Year", ylab="Harvest rate", main="Flounder: Harvest rate")
+plot_shaefer(fit, flounder, main = "Albacore: Fit to data")
 
 t(fit$pars)
 t(fit$refpts)
