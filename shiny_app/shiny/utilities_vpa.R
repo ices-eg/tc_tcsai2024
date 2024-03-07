@@ -1,0 +1,33 @@
+vpa <- function(C, Mvec, Fterm, Fages) {
+  ## Prepare matrices
+  C <- as.matrix(C)
+  T <- nrow(C)
+  A <- ncol(C)
+  N <- F <- Z <- matrix(NA_real_, nrow = T, ncol = A, dimnames = dimnames(C))
+
+  ## create M matrix
+  M <- matrix(Mvec, nrow = T, ncol = A, byrow = TRUE, dimnames = dimnames(C))
+
+  ## Set F in terminal year
+  F[T, ] <- Fterm
+  Z <- F + M
+
+  ## Calculate N in terminal year
+  N <- C * Z / (F * (1 - exp(-Z)))
+
+  ## Calculate N and F up to terminal year,
+  ## assuming F[oldest] = avg(preceding ages)
+  for (t in (T - 1):1)
+  {
+    for (a in 1:(A - 1))
+    {
+      N[t, a] <- N[t + 1, a + 1] * exp(M[t, a]) + C[t, a] * exp(M[t, a] / 2)
+      F[t, a] <- log(N[t, a] / N[t + 1, a + 1]) - M[t, a]
+    }
+    F[t, A] <- mean(F[t, A - (1:Fages)])
+    Z[t, ] <- F[t, ] + M[t, ]
+    N[t, A] <- C[t, A] * Z[t, A] / (F[t, A] * (1 - exp(-Z[t, A])))
+  }
+
+  list(N = N, F = F, Z = Z, C = C, M = M, Fterm = Fterm, Fages = Fages)
+}
