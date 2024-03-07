@@ -26,5 +26,3 @@ ssqs <-
     },
     simplify = FALSE
   )
-
-save(haddock, cod, herring, ssqs, file = "data/app_data.RData")

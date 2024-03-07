@@ -1,24 +1,20 @@
+## Prepare plots and tables for report
+
 ## Before:
 ## After:
 
 library(icesTAF)
+library(rmarkdown)
 
-# create all folders
 mkdir("report")
-mkdir("report/data")
 
+if (FALSE) {
+  rmarkdown::render(
+    "report_02_model_fitting.R",
+    output_format = github_document(html_preview = FALSE)
+  )
 
-# copy in required data
-cp(file.path("data", "app_data.RData"), "report/data")
-
-# copy in utilities
-cp("utilities_models.R", "report")
-
-# copy in server and ui scripts
-cp("shiny_ui.R", "report/ui.R")
-cp("shiny_server.R", "report/server.R")
-cp("shiny_02_model_fitting.R", "report/02_model_fitting.R")
-cp("shiny_03_biological_production.R", "report/03_biological_production.R")
-
-
-msg("Created shiny app. To run, use: \n\n\tlibrary(shiny)\n\trunApp('report')\n\n")
+  x <- readLines("report_02_model_fitting.md")
+  x <- gsub("![](report_02_model_fitting_files/figure-gfm", "![](report/02_model_fitting", x)
+  writeLines(x, "temp.md")
+}
