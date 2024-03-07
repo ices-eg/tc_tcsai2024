@@ -22,4 +22,11 @@ cp("shiny_mod_02_model_fitting.R", "shiny/mod_02_model_fitting.R")
 cp("shiny_mod_03_biological_production.R", "shiny/mod_03_biological_production.R")
 cp("shiny_mod_06_VPA.R", "shiny/mod_06_VPA.R")
 
+# copy over examples
+cp("shiny_mod_examples.R", "shiny/mod_examples.R")
+
+cp("shiny_02_model_fitting.md", "shiny/02_model_fitting.md")
+mkdir("shiny/02_model_fitting")
+cp("report/02_model_fitting/", "shiny")
+
 msg("Created shiny app. To run, use: \n\n\tlibrary(shiny)\n\trunApp('shiny')\n\n")

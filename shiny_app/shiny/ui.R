@@ -1,9 +1,11 @@
 library(shiny)
 library(htmltools)
+library(markdown)
 
 source("mod_02_model_fitting.R")
 source("mod_03_biological_production.R")
 source("mod_06_VPA.R")
+source("mod_examples.R")
 
 # shiny user interface
 ui <- fluidPage(
@@ -20,6 +22,14 @@ ui <- fluidPage(
     tabPanel(
       "VPA",
       mod_06_VPA_ui("vpa")
+    ),
+    tabPanel(
+      "R examples",
+      mod_examples_ui("examples")
     )
   )
 )
+
+# make a module for the example page
+# have a side menu and all the examples.
+# then the selected example is shown in the pane to the right

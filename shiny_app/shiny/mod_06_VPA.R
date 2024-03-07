@@ -4,9 +4,10 @@ mod_06_VPA_ui <- function(id) {
     # Application title
     h3("Simple VPA"),
     fluidRow(
-      column(3,
+      column(
+        3,
         selectInput(ns("data"), "Select dataset", c("haddock", "cod")),
-        numericInput(ns("Fages"), "Number of ages to average over for oldest age F", value = 3),
+        numericInput(ns("Fages"), "Number of ages to average over for oldest age F", value = 3, min = 2, max = 5),
         sliderInput(ns("Fterm"), "F in final year", value = 0.1, min = 0, max = 2, step = 0.05),
         uiOutput(outputId = ns("xmin_slider"))
       ),
@@ -20,6 +21,8 @@ mod_06_VPA_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    df <- reactiveVal(NULL)
+
     output$xmin_slider <- renderUI({
       sliderInput(ns("Xmin"), "Year to start plotting from", value = min(data()$Year), min = min(data()$Year), max = max(data()$Year) - 5, step = 1, sep = "")
     })
@@ -27,7 +30,7 @@ mod_06_VPA_server <- function(id) {
     # assign dataset
     data <- reactive({
       ## empty plot data on selection of dataset
-      df_old <<- data.frame(year = numeric(0), age = numeric(0), val = numeric(0), what = character(0), keep = integer(0))
+      df(NULL)
 
       if (input$data == "cod") {
         list(
@@ -46,7 +49,7 @@ mod_06_VPA_server <- function(id) {
       }
     })
 
-    df <- reactive({
+    observeEvent(list(input$Fages, input$Fterm, input$data), {
       # input variables
       Mvec <- c(rep(0.1, 2), rep(0.3, ncol(data()$catch) - 2))
 
@@ -60,30 +63,28 @@ mod_06_VPA_server <- function(id) {
       Rec <- model$N[, 1]
       Ns <- model$N
 
-      df <- rbind(
+      df_one <- rbind(
         data.frame(year = data()$Year, age = 0, val = ssb, what = "SSB"),
         data.frame(year = data()$Year, age = 0, val = Fbar, what = "Fbar"),
         data.frame(year = data()$Year, age = 0, val = Rec, what = "Recruitment"),
         data.frame(year = data()$Year, age = rep(1:ncol(Ns), each = nrow(Ns)), val = log(c(Ns)), what = "log Numbers")
       )
 
-      df$FinalF <- input$Fterm
+      df_one$FinalF <- input$Fterm
+      df_one$Fages <- input$Fages
 
-      df <-
-        rbind(
-          df,
-          df_old
-        )
-      if (!input$Fterm %in% df_old$FinalF) {
-        df_old <<- rbind(df_old, df)
+      if (!input$Fages %in% df()$Fages || !input$Fterm %in% df()$FinalF) {
+        df(rbind(df(), df_one))
       }
-
-      df <- df[df$year >= input$Xmin, ]
     })
 
     output$LinePlot <- renderPlot({
-      if (nrow(df()) > 0) {
-        ggplot(data = df(), aes(year, val, colour = FinalF, linetype = factor(age), group = interaction(FinalF, age))) +
+      df_ <- df()[df()$year >= input$Xmin, ]
+      if (nrow(df_) > 0) {
+        ggplot(
+          data = df_,
+          aes(year, val, colour = FinalF, linetype = factor(age), group = interaction(FinalF, age, Fages))
+          ) +
           geom_line() +
           labs(x = "Year") +
           facet_wrap(~what, scales = "free", ncol = 2) +
@@ -93,5 +94,5 @@ mod_06_VPA_server <- function(id) {
   })
 }
 
-# load data into model fitting function only
+# load data into vpa
 load("data/app_data.RData", envir = environment(mod_06_VPA_server))
