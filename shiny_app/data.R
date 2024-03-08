@@ -7,6 +7,7 @@ mkdir("data")
 
 # copy csvs to data dir
 cp(taf.data.path("*.csv"), "data")
+cp(taf.data.path("*.dat"), "data")
 
 source("data_02_model_fitting.R")
 source("data_06_VPA.R")

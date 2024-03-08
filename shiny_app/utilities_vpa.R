@@ -1,3 +1,23 @@
+#' Virtual Population Analysis
+#'
+#' Run simple VPA model, with no tuning index.
+#'
+#' @param C catch-at-age matrix.
+#' @param Mvec natural mortality rate, a either a scaler or a vector of same
+#'        length as the number of ages.
+#' @param Fterm terminal F, either a scalar or a vector of same length as the
+#'        number of ages.
+#' @param Fages number of ages to calculate F for oldest age. For example, if
+#'        the catch-at-age matrix contains ages up to 15 and \code{Fages=5},
+#'        then F for the oldest age will be set as the average of ages 10-14.
+#'
+#' @return
+#' List containing the model results (\code{N}, \code{F}, \code{Z}), as well as
+#' the input objects passed by the user (\code{C}, \code{M}, \code{Fterm},
+#' \code{Fages}).
+#'
+#' @export
+
 vpa <- function(C, Mvec, Fterm, Fages) {
   ## Prepare matrices
   C <- as.matrix(C)

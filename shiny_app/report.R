@@ -27,7 +27,7 @@ build_example <- function(filename) {
   cp(paste0("shiny_", filename, ".md"), "report", move = TRUE)
 }
 
-filenames <- c("02_model_fitting", "03_biological_production")
+filenames <- c("02_model_fitting", "03_biological_production", "04_biomass_dynamics", "06_VPA")
 
 for (filename in filenames) {
   build_example(filename)

@@ -572,7 +572,7 @@ r_star <- sample(resids,  replace = TRUE)
 mean(r_star)
 ```
 
-    ## [1] 0.0003732516
+    ## [1] -0.01005598
 
 ``` r
 # do it again
@@ -580,7 +580,7 @@ r_star <- sample(resids, replace = TRUE)
 mean(r_star)
 ```
 
-    ## [1] -0.05218059
+    ## [1] -0.02544972
 
 ``` r
 # do it lots of times!
@@ -647,7 +647,7 @@ quantile(b1_star, c(0.025, 0.975))
 ```
 
     ##     2.5%    97.5% 
-    ## 46640352 75317519
+    ## 46704443 75305356
 
 ``` r
 # what does the 2D bootstrap simulation look like?
