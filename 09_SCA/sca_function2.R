@@ -43,18 +43,19 @@
 #'
 #' @export
 
-sca2 <- function(par, data, full = FALSE, ssq = TRUE) {
+sca2 <- function(par, full = FALSE, ssq = TRUE) {
   ## Get parameters and data
   logNa <- par$logNa
   logNt <- par$logNt
   logFa <- par$logFa
   logFt <- par$logFt
   logQ <- par$logQ
+  logSigmaCatch <- par$logSigmaCatch
+  logSigmaSurvey <- par$logSigmaSurvey
 
   C <- data$C
   I <- data$I
   M <- data$M
-  
 
   minYear <- min(as.integer(rownames(C)))
   maxYear <- max(as.integer(rownames(C)))
@@ -64,16 +65,15 @@ sca2 <- function(par, data, full = FALSE, ssq = TRUE) {
   nAges <- maxAge - minAge + 1
 
   ## Prepare containers
-  N <- matrix(NA_real_,
+  N <- advector(matrix(
     nrow = nYears + 1, ncol = nAges,
     dimnames = list(minYear:(maxYear + 1), minAge:maxAge)
-  )
-  F <- matrix(NA_real_, nrow = nYears, ncol = nAges, dimnames = dimnames(C))
+  ))
 
   ## Evaluate F, Z, and N
   Fa <- exp(c(logFa, 0))
   Ft <- exp(logFt)
-  F[] <- Ft %o% Fa
+  F <- outer(Ft, Fa)
   Z <- F + M
   N[1, ] <- exp(logNa)
   N[-1, 1] <- exp(logNt)
@@ -82,10 +82,8 @@ sca2 <- function(par, data, full = FALSE, ssq = TRUE) {
   T <- nrow(N)
   for (t in 1:(T - 1))
   {
-    for (a in 1:(A - 2))
-    {
-      N[t + 1, a + 1] <- N[t, a] * exp(-Z[t, a])
-    }
+    N[t + 1, 2:(A - 1)] <- N[t, 1:(A - 2)] * exp(-Z[t, 1:(A - 2)])
+    # plus group
     N[t + 1, A] <- N[t, A - 1] * exp(-Z[t, A - 1]) + N[t, A] * exp(-Z[t, A])
   }
 
@@ -95,35 +93,12 @@ sca2 <- function(par, data, full = FALSE, ssq = TRUE) {
   Chat <- Chat[rownames(Nc) %in% rownames(C), colnames(Nc) %in% colnames(C)]
 
   Ni <- N[rownames(N) %in% rownames(I), colnames(N) %in% colnames(I)]
-  Ihat <- sweep(Ni, 2, exp(logQ), "*")
+  Ihat <- t(t(Ni) * exp(logQ))
 
-  ## Evaluate ssq
-  Cres <- log(C) - log(Chat)
-  Ires <- log(I) - log(Ihat)
+  ## Evaluate nll
+  nll <- -sum(dnorm(log(c(C)), mean = log(c(Chat)), sd = exp(logSigmaCatch), log = TRUE))
 
-  if (ssq == TRUE) {
-    objective <- function(res) {
-      sum(res^2)
-    }
-  } else {
-    objective <- function(res) {
-      -sum(dnorm(res, sd = sqrt(mean(res^2)), log = TRUE))
-    }
-  }
+  nll <- nll -sum(dnorm(log(c(I)), mean = log(c(Ihat)), sd = exp(logSigmaSurvey), log = TRUE))
 
-
-  f <- c(catch = objective(Cres), survey = objective(Ires))
-
-  ## Prepare output
-  if (full) {
-    out <-
-      list(
-        par = par, C = C, I = I, M = M, N = N, F = F, Z = Z, Chat = Chat, Ihat = Ihat,
-        Cres = Cres, Ires = Ires, f = f
-      )
-  } else {
-    out <- sum(f)
-  }
-
-  out
+  nll
 }

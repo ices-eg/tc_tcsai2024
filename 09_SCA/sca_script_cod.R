@@ -54,21 +54,31 @@ opt5 <- nlminb(par, sca, data = data,
                control = list(eval.max = 1000, iter.max = 1000))
 opt5
 
-## OR! we can use TMB
-library(RTMB)
-tmbsca <- function(params) {
-  sca2(params, data)
+if (FALSE) {
+  ## OR! we can use TMB
+  library(RTMB)
+  source("09_SCA\\sca_function2.R")
+
+  parlist <- list(
+    logNa = rep(8, ncol(C)),
+    logNt = rep(8, nrow(C)),
+    logFa = rep(0, ncol(C) - 1),
+    logFt = rep(0, nrow(C)),
+    logQ = rep(-5, ncol(I)),
+    logSigmaCatch = 0,
+    logSigmaSurvey = 0
+  )
+
+  obj <- MakeADFun(sca2, parlist)
+
+  opt <- nlminb(obj$par, obj$fn, obj$gr, obj$he)
+  opt
+  rep <- sdreport(obj)
+  summary(rep)
+
+  predictions <- sca(opt$par, data, full = TRUE)
+
 }
-tbmobj <- MakeADFun(tmbsca, parlist)
-
-obj$hessian <- TRUE
-opt <- do.call("optim", obj)
-opt
-opt$hessian ## <-- FD hessian from optim
-obj$he() ## <-- Analytical hessian
-rep <- sdreport(obj)
-summary(rep)
-
 
 # summarise fits to check objective value and convergence
 opt4$value <- opt4$objective
