@@ -25,7 +25,11 @@ cp("shiny_mod_06_VPA.R", "shiny/mod_06_VPA.R")
 # copy over examples
 cp("shiny_mod_examples.R", "shiny/mod_examples.R")
 
-filenames <- c("02_model_fitting", "03_biological_production", "04_biomass_dynamics", "06_VPA")
+filenames <-
+  c(
+    "02_model_fitting", "03_biological_production", "04_biomass_dynamics",
+    "06_VPA", "07_YPR_SPR"
+  )
 
 for (filename in filenames) {
   cp(paste0("report/shiny_", filename, ".md"), paste0("shiny/", filename, ".md"))

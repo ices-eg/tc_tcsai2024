@@ -2,7 +2,16 @@ mod_examples_ui <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(3, selectInput(ns("file"), "Select example", c("model fitting", "biological production", "biomass dynamics", "virtual population analysis")))
+      column(
+        3,
+        selectInput(
+          ns("file"), "Select example",
+          c(
+            "model fitting", "biological production", "biomass dynamics",
+            "virtual population analysis", "yeild and spawner per recruit"
+          )
+        )
+      )
     ),
     fluidRow(
       uiOutput(ns("md"))
@@ -21,6 +30,7 @@ mod_examples_server <- function(id) {
       `biological production` = "03_biological_production.md",
       `biomass dynamics` = "04_biomass_dynamics.md",
       `virtual population analysis` = "06_VPA.md",
+      `yeild and spawner per recruit` = "07_YPR_SPR.md",
       "not_found.md"
       )
     })
