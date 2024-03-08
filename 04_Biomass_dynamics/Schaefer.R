@@ -71,7 +71,7 @@ plot_shaefer <- function(fit, data, main) {
 ## Norther Shelf Haddock
 
 
-haddock <- read.csv("04_Biomass_dynamics/haddock.csv", header=TRUE)
+haddock <- read.csv("04_Biomass_dynamics/haddock_biomass.csv", header=TRUE)
 
 init <-
   c(
@@ -115,7 +115,7 @@ plot_shaefer(fit2, haddock, main = "Haddock")
 ################################################################################
 ## South Atlantic albacore
 
-albacore <- read.table("04_Biomass_dynamics/albacore.dat", header=TRUE)
+albacore <- read.table("04_Biomass_dynamics/albacore_biomass.dat", header = TRUE)
 init <- c(logr=log(0.5), logK=log(200), logBinit=log(100), logq=log(0.5))
 
 Schaefer(par=init, albacore)
@@ -145,7 +145,7 @@ fit$refpts
 ################################################################################
 ## Georges Bank winter flounder
 
-flounder <- read.table("04_Biomass_dynamics/flounder.dat", header = TRUE)
+flounder <- read.table("04_Biomass_dynamics/flounder_biomass.dat", header = TRUE)
 
 K.init <- 8 * mean(flounder$Catch)
 B.init <- 0.5 * K.init
@@ -178,7 +178,7 @@ t(fit$refpts)
 ################################################################################
 ## Cod
 
-cod <- read.csv("04_Biomass_dynamics/cod.csv", header=TRUE)
+cod <- read.csv("04_Biomass_dynamics/cod_biomass.csv", header = TRUE)
 init <- c(logr     = log(1.000),
           logK     = log(8*mean(cod$Catch)),
           logBinit = log(4*mean(cod$Catch)),
