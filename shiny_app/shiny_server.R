@@ -1,5 +1,7 @@
 library(ggplot2)
 
+set.seed(239874)
+
 # load models
 source("utilities_models.R")
 source("utilities_vpa.R")
