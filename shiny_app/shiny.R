@@ -28,7 +28,7 @@ cp("shiny_mod_examples.R", "shiny/mod_examples.R")
 filenames <-
   c(
     "02_model_fitting", "03_biological_production", "04_biomass_dynamics",
-    "06_VPA", "07_YPR_SPR"
+    "06_VPA", "07_YPR_SPR", "09_SCA"
   )
 
 for (filename in filenames) {
