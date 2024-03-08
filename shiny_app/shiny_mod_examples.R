@@ -2,7 +2,7 @@ mod_examples_ui <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(3, selectInput(ns("file"), "Select example", c("model fitting")))
+      column(3, selectInput(ns("file"), "Select example", c("model fitting", "biological production")))
     ),
     fluidRow(
       uiOutput(ns("md"))
@@ -18,6 +18,7 @@ mod_examples_server <- function(id) {
     filename <- reactive({
       switch(input$file,
       `model fitting` = "02_model_fitting.md",
+      `biological production` = "03_biological_production.md",
       "somethingelse.md"
       )
     })

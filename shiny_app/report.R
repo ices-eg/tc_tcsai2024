@@ -8,16 +8,27 @@ library(rmarkdown)
 
 mkdir("report")
 
-rmarkdown::render(
-  "report_02_model_fitting.R",
-  output_format = github_document(html_preview = FALSE),
-  output_file = "shiny_02_model_fitting.md"
-)
 
-x <- readLines("shiny_02_model_fitting.md")
-x <- gsub("shiny_02_model_fitting_files/figure-gfm", "02_model_fitting", x)
-writeLines(x, "shiny_02_model_fitting.md")
+build_example <- function(filename) {
+  rmarkdown::render(
+    paste0("report_", filename, ".R"),
+    output_format = github_document(html_preview = FALSE),
+    output_file = paste0("shiny_", filename, ".md")
+  )
 
-mkdir("report/02_model_fitting")
-cp("shiny_02_model_fitting_files/figure-gfm/*.png", "report/02_model_fitting")
-unlink("shiny_02_model_fitting_files", recursive = TRUE)
+  # change figure file path
+  x <- readLines(paste0("shiny_", filename, ".md"))
+  x <- gsub(paste0("shiny_", filename, "_files/figure-gfm"), filename, x)
+  writeLines(x, paste0("shiny_", filename, ".md"))
+
+  mkdir(paste0("report/", filename))
+  cp(paste0("shiny_", filename, "_files/figure-gfm/*.png"), paste0("report/", filename))
+  unlink(paste0("shiny_", filename, "_files"), recursive = TRUE)
+  cp(paste0("shiny_", filename, ".md"), "report", move = TRUE)
+}
+
+filenames <- c("02_model_fitting", "03_biological_production")
+
+for (filename in filenames) {
+  build_example(filename)
+}

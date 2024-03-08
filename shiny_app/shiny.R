@@ -25,8 +25,12 @@ cp("shiny_mod_06_VPA.R", "shiny/mod_06_VPA.R")
 # copy over examples
 cp("shiny_mod_examples.R", "shiny/mod_examples.R")
 
-cp("shiny_02_model_fitting.md", "shiny/02_model_fitting.md")
-mkdir("shiny/02_model_fitting")
-cp("report/02_model_fitting/", "shiny")
+filenames <- c("02_model_fitting", "03_biological_production")
+
+for (filename in filenames) {
+  cp(paste0("report/shiny_", filename, ".md"), paste0("shiny/", filename, ".md"))
+  mkdir(paste0("shiny/", filename, ""))
+  cp(paste0("report/", filename, "/"), "shiny")
+}
 
 msg("Created shiny app. To run, use: \n\n\tlibrary(shiny)\n\trunApp('shiny')\n\n")

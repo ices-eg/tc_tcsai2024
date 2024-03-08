@@ -118,9 +118,9 @@ SR <-
 SSB.curve <- seq(0, 15000, by=500)
 Rec.curve <- (alpha*SSB.curve) / (beta+SSB.curve)
 
-plot(year, SR$SSB, ylim=c(0,15000), type="l", lwd=2, col="blue", xlab="Year",
+plot(SR$year, SR$SSB, ylim=c(0,15000), type="l", lwd=2, col="blue", xlab="Year",
      ylab="SSB (t)")
-lines(year, SR$Rec*10, lwd=2, col="red")
+lines(SR$year, SR$Rec * 10, lwd = 2, col = "red")
 axis(4, at=seq(0,12000,by=2000), labels=seq(0,1200,by=200))
 mtext("Recruitment at age 1 (1000s)", side=4, line=3)
 
