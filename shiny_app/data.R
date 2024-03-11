@@ -15,7 +15,6 @@ source("data_06_VPA.R")
 save(
   haddock, cod, herring, ssqs,
   cod_catch, cod_mat, cod_wt, cod_Year,
-  haddock_catch, haddock_mat, haddock_wt, haddock_Year,
-  df_old,
+  haddock_catch, haddock_mat, haddock_wt, haddock_Year
   file = "data/app_data.RData"
 )

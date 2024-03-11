@@ -14,6 +14,7 @@ cp(file.path("data", "app_data.RData"), "shiny/data")
 # copy in utilities
 cp("utilities_models.R", "shiny")
 cp("utilities_vpa.R", "shiny")
+cp("utilities_sca.R", "shiny")
 
 # copy in server and ui scripts
 cp("shiny_ui.R", "shiny/ui.R")

@@ -143,28 +143,35 @@ opt5 <- nlminb(par, sca,
 )
 opt5
 
-## OR! we can use TMB
-if (FALSE) {
-  # need to fix
-  library(RTMB)
-  tmbsca <- function(params) {
-    sca2(params, data)
-  }
-  tbmobj <- MakeADFun(tmbsca, parlist)
 
-  obj$hessian <- TRUE
-  opt <- do.call("optim", obj)
-  opt
-  opt$hessian ## <-- FD hessian from optim
-  obj$he() ## <-- Analytical hessian
-  rep <- sdreport(obj)
-  summary(rep)
-}
+## OR! we can use TMB
+library(RTMB)
+source("09_SCA\\sca_function2.R")
+
+parlist <- list(
+  logNa = rep(8, ncol(C)),
+  logNt = rep(8, nrow(C)),
+  logFa = rep(0, ncol(C) - 1),
+  logFt = rep(0, nrow(C)),
+  logQ = rep(-5, ncol(I)),
+  logSigmaCatch = 0,
+  logSigmaSurvey = 0
+)
+
+obj <- MakeADFun(sca2, parlist)
+
+opt6 <- nlminb(obj$par, obj$fn, obj$gr, obj$he)
+opt6
+rep <- sdreport(obj)
+summary(rep)
+
 
 # summarise fits to check objective value and convergence
 opt4$value <- opt4$objective
 opt5$value <- opt5$objective
-opts <- list(opt1 = opt1, opt2 = opt2, opt4 = opt4, opt5 = opt5)
+opt6$value <- opt6$objective
+
+opts <- list(opt1 = opt1, opt2 = opt2, opt4 = opt4, opt5 = opt5, opt6 = opt6)
 sapply(
   opts,
   function(x) {
@@ -175,12 +182,9 @@ sapply(
   }
 )
 
-# lets go with BFGS and maximum iterations of 1000
+# lets go with RTMB nlminb solution
 
-## final run (do it with maximum likelihood)
-
-run <- optim(par = par, fn = sca, data = data, ssq = FALSE, method = "BFGS", hessian = TRUE)
-
+run <- opt6
 run
 
 # evaluate the model at the optimised parameter values
@@ -221,7 +225,7 @@ plot(Year[-length(Year)], Fbar2.4,
 
 # get some errors out, sometimes called a parametric bootstrap
 library(MASS)
-Sigma <- solve(run$hessian)
+Sigma <- solve(obj$he())
 par_sim <- mvrnorm(1000, run$par, Sigma)
 
 sims <- lapply(1:1000, function(i) sca(par_sim[i, ], data, full = TRUE))

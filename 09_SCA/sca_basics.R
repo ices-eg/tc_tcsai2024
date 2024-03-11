@@ -14,9 +14,8 @@ nYears <- maxYear - minYear + 1
 nAges <- maxAge - minAge + 1
 
 ## Prepare containers
-N <- matrix(NA_real_, nrow=nYears+1, ncol=nAges,
-            dimnames=list(minYear:(maxYear+1), minAge:maxAge))
-F <- matrix(NA_real_, nrow=nYears, ncol=nAges, dimnames=dimnames(C))
+N <- matrix(nrow=nYears+1, ncol=nAges, dimnames=list(minYear:(maxYear+1), minAge:maxAge))
+F <- matrix(nrow=nYears, ncol=nAges, dimnames=dimnames(C))
 
 ## Set parameter initial values
 logNa <- c(6.8, 5.7, 3.5, 3.0, 1.8, 2.8)
@@ -29,10 +28,11 @@ logFt <- c(-1.7, -1.7, -1.7, -1.6, -1.8, -1.8, -1.6, -1.8, -1.7, -1.8, -1.8,
            -2.1, -2.1, -2.2, -2.3, -2.4, -2.6, -2.8, -2.8, -2.9, -2.9, -2.8)
 logQ <- c(-5.1, -3.6, -2.9, -2.9, -2.7)
 
+
 ## Evaluate F, Z, and N
 Fa <- exp(c(logFa, 0))
 Ft <- exp(logFt)
-F[] <- Ft %o% Fa
+F[] <- outer(Ft, Fa)
 Z <- F + M
 N[1,] <- exp(logNa)
 N[-1,1] <- exp(logNt)
@@ -61,8 +61,6 @@ Ires <- log(I) - log(Ihat)
 ## Evaluate SSQ
 ssq <- function(res)
 {
-  # if you want to switch to max likelihood
-  #-sum(dnorm(res, sd=sqrt(mean(res^2)), log=TRUE))
   sum(res^2)
 }
 
